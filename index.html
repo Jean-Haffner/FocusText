@@ -20,7 +20,8 @@
             font-family: 'Consolas', 'Courier New', monospace;
             transition: background-color 0.3s;
             padding-top: 30px;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         
         body.dark {
@@ -99,7 +100,8 @@
         .app-body {
             display: flex;
             align-items: stretch;
-            min-height: calc(100vh - 30px);
+            height: calc(100vh - 30px);
+            overflow: hidden;
         }
         
         /* ---- Sidebar (chapters panel) ---- */
@@ -158,6 +160,10 @@
             min-height: 1.5em;
         }
         
+        .chapter-item.chapter-hidden {
+            display: none;
+        }
+        
         .dark .chapter-item {
             background-color: #3a3a3a;
             color: #e8e8e8;
@@ -182,11 +188,6 @@
         
         .chapter-item.drag-over-bottom {
             box-shadow: inset 0 -2px 0 0 #4a9eff;
-        }
-        
-        .chapter-empty-label {
-            font-style: italic;
-            opacity: 0.6;
         }
         
         .chapter-drag-handle {
@@ -230,6 +231,7 @@
             flex: 1;
             min-width: 0;
             padding: 65px;
+            overflow-y: auto;
         }
         
         .editor-container {
@@ -271,40 +273,292 @@
             color: #000000;
         }
         
+        body.large-font .editor-content {
+            font-size: 17px;
+        }
+        
+        /* ---- Editor stack (textarea + highlight overlay) ---- */
+        
+        .editor-stack {
+            position: relative;
+        }
+        
+        /* The highlight layer never renders a parallel copy of the text
+           (that requires it to stay pixel-identical to the textarea
+           forever, which is fragile). Instead it's an empty clipping
+           viewport; JS measures each match's real on-screen position via
+           a one-off mirror and drops plain colored boxes at those exact
+           coordinates into .highlight-inner. */
+        .highlight-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .highlight-inner {
+            position: relative;
+        }
+        
+        .hl-box {
+            position: absolute;
+            border-radius: 2px;
+            background-color: rgba(224, 178, 60, 0.55);
+        }
+        
+        .hl-box.current {
+            background-color: rgba(74, 158, 255, 0.65);
+        }
+        
+
+        /* ---- Search sidebar (right) ---- */
+        
+        .search-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            font-size: 11px;
+            transition: width 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+            box-sizing: border-box;
+        }
+        
+        .search-sidebar.hidden {
+            width: 0;
+            padding: 0 !important;
+            opacity: 0;
+            overflow: hidden;
+        }
+        
+        .dark .search-sidebar {
+            background-color: #262626;
+        }
+        
+        .light .search-sidebar {
+            background-color: #2f2f2f;
+        }
+        
+        .search-header {
+            padding: 12px 14px 8px;
+        }
+        
+        .search-input-wrap {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 6px 24px 6px 8px;
+            font-size: 11px;
+            font-family: inherit;
+            border: none;
+            border-radius: 3px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        
+        .dark #searchInput {
+            background-color: #3a3a3a;
+            color: #e8e8e8;
+        }
+        
+        .light #searchInput {
+            background-color: #4a4a4a;
+            color: #e8e8e8;
+        }
+        
+        .search-clear {
+            position: absolute;
+            right: 7px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            opacity: 0.6;
+            font-size: 13px;
+            line-height: 1;
+        }
+        
+        .search-clear:hover {
+            opacity: 1;
+        }
+        
+        .search-count-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            opacity: 0.75;
+        }
+        
+        .dark .search-count-row {
+            color: #cfcfcf;
+        }
+        
+        .light .search-count-row {
+            color: #e8e8e8;
+        }
+        
+        .search-nav {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .search-nav-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 9px;
+            color: inherit;
+            opacity: 0.8;
+            padding: 3px 5px;
+        }
+        
+        .search-nav-btn:hover {
+            opacity: 1;
+        }
+        
+        .search-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+        
+        .search-results {
+            padding: 8px 10px 10px;
+        }
+        
+        .search-result-item {
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            line-height: 1.4;
+            box-shadow: inset 0 0 0 1px transparent;
+        }
+        
+        .dark .search-result-item {
+            background-color: #3a3a3a;
+            color: #c9c9c9;
+        }
+        
+        .light .search-result-item {
+            background-color: #4a4a4a;
+            color: #c9c9c9;
+        }
+        
+        .search-result-item:hover {
+            opacity: 0.85;
+        }
+        
+        .search-result-item.current {
+            box-shadow: inset 0 0 0 1px #4a9eff;
+        }
+        
+        .search-result-item:focus {
+            outline: 2px solid #4a9eff;
+            outline-offset: 1px;
+        }
+        
+        .search-result-item mark {
+            background-color: #e0b23c;
+            color: #000000;
+            border-radius: 2px;
+            padding: 0 1px;
+        }
+        
+        .search-no-results {
+            padding: 4px 4px 8px;
+            opacity: 0.5;
+            font-style: italic;
+        }
+        
         input[type="file"] {
             display: none;
+        }
+        
+        .menu-separator {
+            height: 1px;
+            margin: 4px 8px;
+            background-color: rgba(232, 232, 232, 0.2);
+        }
+        
+        /* ---- Bottom bar (words & characters) ---- */
+        
+        .app-body.with-bottombar {
+            height: calc(100vh - 30px - 22px);
+        }
+        
+        .bottombar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 14px;
+            font-size: 11px;
+            z-index: 100;
+            background-color: #555555;
+            color: #e8e8e8;
+        }
+        
+        .bottombar.hidden {
+            display: none;
+        }
+        
+        .bottombar-sep {
+            opacity: 0.4;
         }
     </style>
 </head>
 <body class="dark">
     <div class="menubar">
         <div class="menu">
-            <div class="menu-title" onclick="toggleMenu('fileMenu')">File</div>
-            <div class="menu-items" id="fileMenu">
-                <div class="menu-item" onclick="openFile(); closeMenus()">Open</div>
-                <div class="menu-item" onclick="saveFile(); closeMenus()">Save as</div>
+            <div class="menu-title" tabindex="0" role="button" aria-haspopup="true" onclick="toggleMenu('fileMenu')">File</div>
+            <div class="menu-items" id="fileMenu" role="menu">
+                <div class="menu-item" tabindex="0" role="menuitem" onclick="openFile(); closeMenus()">Open</div>
+                <div class="menu-item" tabindex="0" role="menuitem" onclick="saveFile(); closeMenus()">Save as</div>
             </div>
         </div>
         <div class="menu">
-            <div class="menu-title" onclick="toggleMenu('editMenu')">Edit</div>
-            <div class="menu-items" id="editMenu">
-                <div class="menu-item" id="undoItem" onclick="undo(); closeMenus()">Undo</div>
-                <div class="menu-item" id="redoItem" onclick="redo(); closeMenus()">Redo</div>
+            <div class="menu-title" tabindex="0" role="button" aria-haspopup="true" onclick="toggleMenu('editMenu')">Edit</div>
+            <div class="menu-items" id="editMenu" role="menu">
+                <div class="menu-item disabled" id="undoItem" tabindex="-1" role="menuitem" onclick="undo()">Undo</div>
+                <div class="menu-item disabled" id="redoItem" tabindex="-1" role="menuitem" onclick="redo()">Redo</div>
             </div>
         </div>
         <div class="menu">
-            <div class="menu-title" onclick="toggleMenu('viewMenu')">View</div>
-            <div class="menu-items" id="viewMenu">
-                <div class="menu-item" onclick="toggleTheme(); closeMenus()">Toggle Theme</div>
-                <div class="menu-item" onclick="toggleSidebar(); closeMenus()">
+            <div class="menu-title" tabindex="0" role="button" aria-haspopup="true" onclick="toggleMenu('viewMenu')">View</div>
+            <div class="menu-items" id="viewMenu" role="menu">
+                <div class="menu-item" tabindex="0" role="menuitem" onclick="toggleTheme(); closeMenus()">Toggle Theme</div>
+                <div class="menu-item" tabindex="0" role="menuitemcheckbox" onclick="toggleLargeFont(); closeMenus()">
+                    <span>Large Font</span>
+                    <span class="menu-item-check" id="largeFontCheck" style="visibility: hidden;">✓</span>
+                </div>
+                <div class="menu-item" tabindex="0" role="menuitemcheckbox" onclick="toggleFullScreen(); closeMenus()">
+                    <span>Full Screen</span>
+                    <span class="menu-item-check" id="fullScreenCheck" style="visibility: hidden;">✓</span>
+                </div>
+                <div class="menu-separator" role="separator"></div>
+                <div class="menu-item" tabindex="0" role="menuitemcheckbox" onclick="toggleSidebar(); closeMenus()">
                     <span>Chapters Sidebar</span>
                     <span class="menu-item-check" id="sidebarCheck">✓</span>
+                </div>
+                <div class="menu-item" tabindex="0" role="menuitemcheckbox" onclick="toggleSearchSidebar(); closeMenus()">
+                    <span>Search Sidebar</span>
+                    <span class="menu-item-check" id="searchSidebarCheck" style="visibility: hidden;">✓</span>
+                </div>
+                <div class="menu-item" tabindex="0" role="menuitemcheckbox" onclick="toggleBottomBar(); closeMenus()">
+                    <span>Words &amp; Characters Bottombar</span>
+                    <span class="menu-item-check" id="bottomBarCheck" style="visibility: hidden;">✓</span>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="app-body">
+    <div class="app-body" id="appBody">
         <div class="sidebar" id="sidebar">
             <div class="chapters-header">Chapters (drag to reorder)</div>
             <div class="chapter-list" id="chapterList"></div>
@@ -312,9 +566,37 @@
         
         <div class="main-content">
             <div class="editor-container">
-                <textarea id="editor" class="editor-content" spellcheck="false"></textarea>
+                <div class="editor-stack">
+                    <div class="highlight-layer" id="highlightLayer" aria-hidden="true">
+                        <div class="highlight-inner" id="highlightInner"></div>
+                    </div>
+                    <textarea id="editor" class="editor-content" spellcheck="false"></textarea>
+                </div>
             </div>
         </div>
+        
+        <div class="search-sidebar hidden" id="searchSidebar" inert>
+            <div class="search-header">
+                <div class="search-input-wrap">
+                    <input type="text" id="searchInput" placeholder="Search document" autocomplete="off">
+                    <span class="search-clear" id="searchClear" title="Clear search">×</span>
+                </div>
+                <div class="search-count-row">
+                    <span id="searchCount">No search term</span>
+                    <span class="search-nav">
+                        <button class="search-nav-btn" id="searchPrev" title="Previous match" disabled>▲</button>
+                        <button class="search-nav-btn" id="searchNext" title="Next match" disabled>▼</button>
+                    </span>
+                </div>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+    
+    <div class="bottombar hidden" id="bottomBar">
+        <span id="wordCount">Words: 0</span>
+        <span class="bottombar-sep">|</span>
+        <span id="charCount">Characters: 0</span>
     </div>
     
     <input type="file" id="fileInput" accept=".txt">
@@ -327,12 +609,43 @@
         const sidebarCheck = document.getElementById('sidebarCheck');
         const undoItem = document.getElementById('undoItem');
         const redoItem = document.getElementById('redoItem');
+        const largeFontCheck = document.getElementById('largeFontCheck');
+        const highlightLayer = document.getElementById('highlightLayer');
+        const highlightInner = document.getElementById('highlightInner');
+        const searchSidebar = document.getElementById('searchSidebar');
+        const searchSidebarCheck = document.getElementById('searchSidebarCheck');
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+        const searchCount = document.getElementById('searchCount');
+        const searchResultsEl = document.getElementById('searchResults');
+        const searchPrevBtn = document.getElementById('searchPrev');
+        const searchNextBtn = document.getElementById('searchNext');
+        const appBody = document.getElementById('appBody');
+        const bottomBar = document.getElementById('bottomBar');
+        const bottomBarCheck = document.getElementById('bottomBarCheck');
+        const fullScreenCheck = document.getElementById('fullScreenCheck');
+        const wordCountEl = document.getElementById('wordCount');
+        const charCountEl = document.getElementById('charCount');
         let history = [''];
         let historyIndex = 0;
-        let isUndoRedo = false;
+        // Edits that land within HISTORY_DEBOUNCE_MS of each other are
+        // coalesced into a single history entry (like most editors'
+        // "undo a burst of typing at once" behavior), instead of pushing
+        // one entry per keystroke. debounceTimer !== null means "we're
+        // still inside an open burst"; when it fires (a pause), the burst
+        // closes and the next keystroke starts a fresh entry.
+        let debounceTimer = null;
+        const HISTORY_DEBOUNCE_MS = 500;
         let draggedItem = null;
         let renderScheduled = false;
+        let isDirty = false;
         let sidebarVisible = true;
+        let largeFontEnabled = false;
+        let searchSidebarVisible = false;
+        let bottomBarVisible = false;
+        let searchMatches = [];
+        let currentMatchIndex = -1;
+        let currentFileName = null;
 
         // ---- Virtual chapter model -------------------------------------
         // The raw text in the textarea is never touched by this logic.
@@ -407,6 +720,7 @@
         // ---- Rendering the chapter list (fully decoupled from the textarea) ----
 
         function scheduleRenderChapters() {
+            if (bottomBarVisible) updateWordCharCount();
             if (renderScheduled) return;
             renderScheduled = true;
             requestAnimationFrame(() => {
@@ -419,11 +733,29 @@
             const chapters = parseChapters(editor.value);
             chapterList.innerHTML = '';
 
-            chapters.forEach((chapter, idx) => {
+            let visibleIndex = 0;
+
+            chapters.forEach((chapter) => {
                 const item = document.createElement('div');
                 item.className = 'chapter-item';
                 item.draggable = false;
                 item._chapter = chapter;
+
+                const text = chapterLabel(chapter);
+                const isEmpty = !text;
+
+                if (isEmpty) {
+                    // Empty chapters are pure blank-line spacing between
+                    // real chapters. They're kept as a placeholder node so
+                    // drag-reordering and text reconstruction still
+                    // account for their position, but they're not shown
+                    // in the sidebar list itself.
+                    item.classList.add('chapter-hidden');
+                    chapterList.appendChild(item);
+                    return;
+                }
+
+                visibleIndex += 1;
 
                 const handle = document.createElement('span');
                 handle.className = 'chapter-drag-handle';
@@ -432,24 +764,25 @@
 
                 const index = document.createElement('span');
                 index.className = 'chapter-index';
-                index.textContent = (idx + 1) + '.';
+                index.textContent = visibleIndex + '.';
                 item.appendChild(index);
 
                 const label = document.createElement('span');
-                const text = chapterLabel(chapter);
-                if (text) {
-                    label.className = 'chapter-label';
-                    label.textContent = text;
-                } else {
-                    label.className = 'chapter-label chapter-empty-label';
-                    label.textContent = '(empty chapter)';
-                }
+                label.className = 'chapter-label';
+                label.textContent = text;
                 item.appendChild(label);
 
                 item.addEventListener('click', (e) => {
                     if (e.target === handle) return;
                     editor.focus();
                     editor.setSelectionRange(chapter.startOffset, chapter.endOffset);
+                });
+
+                item.addEventListener('dblclick', (e) => {
+                    if (e.target === handle) return;
+                    editor.focus();
+                    editor.setSelectionRange(chapter.startOffset, chapter.startOffset);
+                    scrollToOffset(chapter.startOffset);
                 });
 
                 setupChapterDragEvents(item, handle);
@@ -462,9 +795,18 @@
         // The actual text is rebuilt once, on drop, from the resulting
         // DOM order of chapter items.
 
+        // Tracks whether the in-progress drag has been committed to the
+        // actual document text yet (see dragend handler below).
+        let dragCommitted = false;
+
         function setupChapterDragEvents(item, handle) {
             handle.addEventListener('dragstart', (e) => {
+                if (!chapterLabel(item._chapter)) {
+                    e.preventDefault();
+                    return;
+                }
                 draggedItem = item;
+                dragCommitted = false;
                 item.classList.add('dragging');
                 e.stopPropagation();
             });
@@ -474,6 +816,20 @@
                 document.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
                     el.classList.remove('drag-over-top', 'drag-over-bottom');
                 });
+                // 'drop' can fail to land on any element with a handler at
+                // all (dropped outside the sidebar entirely, dropped
+                // outside the browser window, or the drag was cancelled
+                // with Escape). 'dragend' always fires though, regardless
+                // of how the drag ended. If nothing committed the reorder
+                // by this point, the DOM may still be left in whatever
+                // shuffled state the last dragover produced, silently out
+                // of sync with the real text. Re-rendering from the actual
+                // editor content discards that stray visual state so the
+                // sidebar can never show an order the document doesn't have.
+                if (!dragCommitted) {
+                    renderChapters();
+                }
+                draggedItem = null;
             });
 
             item.addEventListener('dragover', (e) => {
@@ -501,18 +857,244 @@
 
             item.addEventListener('drop', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 commitChapterOrder();
             });
         }
 
+        // Universal fallback: a drop over any part of the page -- not just
+        // a chapter item or even the sidebar -- still commits the reorder.
+        // Item-level and container-level handlers only cover drops that
+        // land within the chapters sidebar; dragging an entry to swap the
+        // first and last position often overshoots past the sidebar
+        // entirely (e.g. into the main editor pane), and a drop there has
+        // no listener otherwise, so the reorder would silently never save.
+        document.addEventListener('dragover', (e) => {
+            if (!draggedItem) return;
+            e.preventDefault();
+        });
+
+        document.addEventListener('drop', (e) => {
+            if (!draggedItem) return;
+            e.preventDefault();
+            commitChapterOrder();
+        });
+
         function commitChapterOrder() {
+            dragCommitted = true;
             const orderedChapters = Array.from(chapterList.children).map(el => el._chapter);
-            const newText = reconstructText(orderedChapters);
+            let newText = reconstructText(orderedChapters);
+
+            // A chapter can carry its own leading/trailing blank lines
+            // (left over from a run of 3+ blank lines in the original
+            // text -- parseChapters only ever consumes blank lines in
+            // pairs). Reordering can place such a chapter next to a
+            // different neighbor, stacking those leftover blanks with the
+            // 3-newline join separator into a run longer than the
+            // original document ever had. Cap it here.
+            newText = newText.replace(/\n{5,}/g, '\n\n\n\n');
+
             if (newText === editor.value) return;
 
             editor.value = newText;
-            updateHistory();
+            // A reorder is a discrete, deliberate action, not a burst of
+            // typing -- always commit it as its own history entry, even
+            // if it happens to land inside another edit's debounce window.
+            updateHistory(true);
             renderChapters();
+            if (searchSidebarVisible) refreshSearchMatches();
+        }
+
+        // ---- Monospace layout engine ------------------------------------
+        // A <textarea> exposes no API for "pixel position of character N".
+        // The original approach mirrored the text into a plain <div> and
+        // trusted two different browser layout engines (the textarea's
+        // internal renderer and the CSS box layout used for a <div>) to
+        // agree pixel-for-pixel. That mostly worked, but measurably
+        // diverged over long, densely word-wrapped paragraphs (confirmed
+        // against real content: the drift grows line by line and only
+        // becomes visible after enough accumulated lines).
+        //
+        // Since this editor uses a monospace font, wrapping can instead be
+        // computed with plain arithmetic: measure the real column count
+        // and line height once from an actual hidden <textarea> clone
+        // (not a div, so there's no second engine to disagree with), then
+        // replicate the textarea's own greedy word-wrap in JS. No
+        // rendering-engine comparison is involved, so there's nothing
+        // left to drift.
+
+        let layoutMetricsCache = null; // { colsPerLine, lineHeightPx, charWidthPx }
+        let visualLinesCache = null;   // { text, colsPerLine, lines }
+
+        function invalidateLayoutCache() {
+            layoutMetricsCache = null;
+            visualLinesCache = null;
+        }
+
+        function getLayoutMetrics() {
+            if (layoutMetricsCache) return layoutMetricsCache;
+
+            const cs = getComputedStyle(editor);
+            const clone = document.createElement('textarea');
+            clone.style.position = 'absolute';
+            clone.style.visibility = 'hidden';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.boxSizing = 'border-box';
+            clone.style.border = 'none';
+            clone.style.padding = '0';
+            clone.style.margin = '0';
+            clone.style.whiteSpace = 'pre-wrap';
+            clone.style.wordWrap = 'break-word';
+            clone.style.fontFamily = cs.fontFamily;
+            clone.style.fontSize = cs.fontSize;
+            clone.style.fontWeight = cs.fontWeight;
+            clone.style.lineHeight = cs.lineHeight;
+            clone.style.letterSpacing = cs.letterSpacing;
+            clone.style.width = editor.clientWidth + 'px';
+            clone.style.height = 'auto';
+            clone.rows = 1;
+            document.body.appendChild(clone);
+
+            // Binary search: how many identical characters fit on one
+            // line at this exact width? This asks the real textarea
+            // rendering directly rather than assuming a div would agree.
+            clone.value = 'x';
+            const singleLineHeight = clone.scrollHeight;
+            let hi = 8;
+            clone.value = 'x'.repeat(hi);
+            while (clone.scrollHeight <= singleLineHeight && hi < 4000) {
+                hi *= 2;
+                clone.value = 'x'.repeat(hi);
+            }
+            let lo = 1;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                clone.value = 'x'.repeat(mid);
+                if (clone.scrollHeight <= singleLineHeight) lo = mid; else hi = mid - 1;
+            }
+            document.body.removeChild(clone);
+
+            const colsPerLine = Math.max(1, lo);
+
+            // Measure the *actual* rendered width of exactly colsPerLine
+            // characters, rather than inferring it from clientWidth /
+            // colsPerLine. The line stops filling once the next character
+            // no longer fits, so up to one character's worth of width is
+            // left over as slack in the container -- dividing the full
+            // container width by colsPerLine spreads that slack across
+            // every column, overestimating each character's width and
+            // compounding rightward across each line. A plain single-line
+            // (unwrapped) measurement has no such slack.
+            const widthSpan = document.createElement('span');
+            widthSpan.style.position = 'absolute';
+            widthSpan.style.visibility = 'hidden';
+            widthSpan.style.whiteSpace = 'pre';
+            widthSpan.style.fontFamily = cs.fontFamily;
+            widthSpan.style.fontSize = cs.fontSize;
+            widthSpan.style.fontWeight = cs.fontWeight;
+            widthSpan.style.letterSpacing = cs.letterSpacing;
+            widthSpan.textContent = 'x'.repeat(colsPerLine);
+            document.body.appendChild(widthSpan);
+            const charWidthPx = widthSpan.getBoundingClientRect().width / colsPerLine;
+            document.body.removeChild(widthSpan);
+
+            // Line height computed analytically (fontSize * multiplier)
+            // rather than from a rounded scrollHeight delta, which loses
+            // fractional pixels (e.g. 11px * 1.5 = 16.5px, but a rounded
+            // pixel measurement can't represent that) and compounds that
+            // rounding error over many lines.
+            const fontSizePx = parseFloat(cs.fontSize);
+            const lhRaw = cs.lineHeight;
+            let lineHeightPx;
+            if (lhRaw.endsWith('px')) {
+                lineHeightPx = parseFloat(lhRaw);
+            } else if (lhRaw === 'normal') {
+                lineHeightPx = fontSizePx * 1.2;
+            } else {
+                lineHeightPx = fontSizePx * parseFloat(lhRaw);
+            }
+
+            layoutMetricsCache = { colsPerLine, lineHeightPx, charWidthPx };
+            return layoutMetricsCache;
+        }
+
+        // Replicates greedy word-wrap (break at whitespace when possible,
+        // else force-break an over-long token) using only column counts,
+        // matching the textarea's own word-wrap: break-word behavior.
+        function computeVisualLines(text, colsPerLine) {
+            if (visualLinesCache && visualLinesCache.text === text && visualLinesCache.colsPerLine === colsPerLine) {
+                return visualLinesCache.lines;
+            }
+
+            const lines = [];
+            function wrapParagraph(paraText, paraOffset) {
+                const n = paraText.length;
+                if (n === 0) { lines.push({ start: paraOffset, end: paraOffset }); return; }
+                let lineStart = 0, col = 0, i = 0;
+                while (i < n) {
+                    const isSpace = paraText[i] === ' ' || paraText[i] === '\t';
+                    let j = i;
+                    while (j < n && ((paraText[j] === ' ' || paraText[j] === '\t') === isSpace)) j++;
+                    const tokenLen = j - i;
+
+                    if (!isSpace && tokenLen > colsPerLine) {
+                        if (col > 0) {
+                            lines.push({ start: paraOffset + lineStart, end: paraOffset + i });
+                            lineStart = i; col = 0;
+                        }
+                        let tokenPos = i, remaining = tokenLen;
+                        while (remaining > colsPerLine) {
+                            lines.push({ start: paraOffset + tokenPos, end: paraOffset + tokenPos + colsPerLine });
+                            tokenPos += colsPerLine; remaining -= colsPerLine;
+                        }
+                        lineStart = tokenPos; col = remaining; i = j;
+                        continue;
+                    }
+
+                    if (col + tokenLen > colsPerLine) {
+                        lines.push({ start: paraOffset + lineStart, end: paraOffset + i });
+                        lineStart = i; col = 0;
+                        if (isSpace) { lineStart = j; i = j; continue; }
+                    }
+                    col += tokenLen;
+                    i = j;
+                }
+                lines.push({ start: paraOffset + lineStart, end: paraOffset + n });
+            }
+
+            let idx = 0;
+            while (true) {
+                let nl = text.indexOf('\n', idx);
+                if (nl === -1) nl = text.length;
+                wrapParagraph(text.slice(idx, nl), idx);
+                if (nl === text.length) break;
+                idx = nl + 1;
+            }
+
+            visualLinesCache = { text, colsPerLine, lines };
+            return lines;
+        }
+
+        function findLineIndex(offset, lines) {
+            let loI = 0, hiI = lines.length - 1;
+            while (loI <= hiI) {
+                const mid = (loI + hiI) >> 1;
+                const ln = lines[mid];
+                if (offset < ln.start) hiI = mid - 1;
+                else if (offset > ln.end) loI = mid + 1;
+                else return mid;
+            }
+            return Math.max(0, Math.min(lines.length - 1, loI));
+        }
+
+        function scrollToOffset(offset) {
+            const { colsPerLine, lineHeightPx } = getLayoutMetrics();
+            const lines = computeVisualLines(editor.value, colsPerLine);
+            const lineIndex = findLineIndex(offset, lines);
+
+            editor.scrollTop = Math.max(0, lineIndex * lineHeightPx - editor.clientHeight / 3);
+            syncHighlightScroll();
         }
 
         // ---- Plain-text editing: the textarea is left completely alone ----
@@ -521,36 +1103,49 @@
         // exactly as the browser implements them.
 
         editor.addEventListener('input', () => {
+            isDirty = true;
             updateHistory();
             scheduleRenderChapters();
+            if (searchSidebarVisible) {
+                refreshSearchMatches();
+            }
         });
 
-        function setTextContent(text) {
-            editor.value = text;
-            scheduleRenderChapters();
-        }
+        editor.addEventListener('scroll', syncHighlightScroll);
 
-        function getTextContent() {
-            return editor.value;
-        }
+        function updateHistory(forceNewEntry) {
+            const text = editor.value;
 
-        function updateHistory() {
-            if (isUndoRedo) {
-                isUndoRedo = false;
+            // No actual change (can happen when this is called defensively,
+            // e.g. after a reorder that turned out to be a no-op) -- just
+            // keep the debounce window alive and bail out.
+            if (text === history[historyIndex]) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => { debounceTimer = null; }, HISTORY_DEBOUNCE_MS);
                 updateHistoryButtons();
                 return;
             }
 
-            const text = editor.value;
-            history = history.slice(0, historyIndex + 1);
-            history.push(text);
-            historyIndex++;
+            if (debounceTimer && !forceNewEntry) {
+                // Still inside the same edit burst: coalesce into the
+                // current entry instead of growing the stack one
+                // keystroke at a time.
+                history[historyIndex] = text;
+            } else {
+                // Starting a new burst (or an explicit standalone commit,
+                // like a chapter reorder): push a fresh entry.
+                history = history.slice(0, historyIndex + 1);
+                history.push(text);
+                historyIndex++;
 
-            if (history.length > 1000) {
-                history.shift();
-                historyIndex--;
+                if (history.length > 1000) {
+                    history.shift();
+                    historyIndex--;
+                }
             }
 
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => { debounceTimer = null; }, HISTORY_DEBOUNCE_MS);
             updateHistoryButtons();
         }
 
@@ -565,26 +1160,42 @@
         function undo() {
             if (historyIndex > 0) {
                 historyIndex--;
-                isUndoRedo = true;
                 editor.value = history[historyIndex];
+                isDirty = true;
+                // Setting .value programmatically doesn't fire 'input', so
+                // there's no risk of this call itself being recorded as a
+                // new edit. Clearing the debounce timer just makes sure the
+                // *next* real keystroke always starts a brand-new burst,
+                // rather than potentially coalescing into a leftover timer
+                // from before the undo.
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
                 scheduleRenderChapters();
                 updateHistoryButtons();
+                if (searchSidebarVisible) refreshSearchMatches();
             }
         }
 
         function redo() {
             if (historyIndex < history.length - 1) {
                 historyIndex++;
-                isUndoRedo = true;
                 editor.value = history[historyIndex];
+                isDirty = true;
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
                 scheduleRenderChapters();
                 updateHistoryButtons();
+                if (searchSidebarVisible) refreshSearchMatches();
             }
         }
 
         function updateHistoryButtons() {
-            undoItem.classList.toggle('disabled', historyIndex <= 0);
-            redoItem.classList.toggle('disabled', historyIndex >= history.length - 1);
+            const undoDisabled = historyIndex <= 0;
+            const redoDisabled = historyIndex >= history.length - 1;
+            undoItem.classList.toggle('disabled', undoDisabled);
+            redoItem.classList.toggle('disabled', redoDisabled);
+            undoItem.tabIndex = undoDisabled ? -1 : 0;
+            redoItem.tabIndex = redoDisabled ? -1 : 0;
         }
 
         document.addEventListener('keydown', (e) => {
@@ -608,9 +1219,15 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    setTextContent(e.target.result);
+                    editor.value = e.target.result;
+                    isDirty = false;
+                    currentFileName = file.name;
+                    scheduleRenderChapters();
+                    if (searchSidebarVisible) performSearch();
                     history = [e.target.result];
                     historyIndex = 0;
+                    clearTimeout(debounceTimer);
+                    debounceTimer = null;
                     updateHistoryButtons();
                 };
                 reader.readAsText(file);
@@ -619,13 +1236,14 @@
         });
 
         function saveFile() {
-            const text = getTextContent();
+            const text = editor.value;
             const blob = new Blob([text], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'document.txt';
+            a.download = currentFileName || 'document.txt';
             a.click();
             URL.revokeObjectURL(a.href);
+            isDirty = false;
         }
 
         function toggleTheme() {
@@ -633,15 +1251,344 @@
             document.body.classList.toggle('light');
         }
 
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        // Keeps the menu checkmark accurate no matter how fullscreen was
+        // exited (Esc key, browser chrome button, or toggleFullScreen
+        // itself), since the browser doesn't route those through our code.
+        document.addEventListener('fullscreenchange', () => {
+            fullScreenCheck.style.visibility = document.fullscreenElement ? 'visible' : 'hidden';
+        });
+
         function toggleSidebar() {
             sidebarVisible = !sidebarVisible;
             sidebar.classList.toggle('hidden', !sidebarVisible);
             sidebarCheck.style.visibility = sidebarVisible ? 'visible' : 'hidden';
         }
 
+        function toggleLargeFont() {
+            largeFontEnabled = !largeFontEnabled;
+            document.body.classList.toggle('large-font', largeFontEnabled);
+            largeFontCheck.style.visibility = largeFontEnabled ? 'visible' : 'hidden';
+            invalidateLayoutCache();
+            if (searchSidebarVisible) updateHighlightLayer();
+        }
+
+        function toggleSearchSidebar() {
+            searchSidebarVisible = !searchSidebarVisible;
+            searchSidebar.classList.toggle('hidden', !searchSidebarVisible);
+            searchSidebar.toggleAttribute('inert', !searchSidebarVisible);
+            searchSidebarCheck.style.visibility = searchSidebarVisible ? 'visible' : 'hidden';
+
+            if (searchSidebarVisible) {
+                searchInput.focus();
+                performSearch();
+            } else {
+                clearHighlightLayer();
+            }
+        }
+
+        function updateWordCharCount() {
+            const text = editor.value;
+            const trimmed = text.trim();
+            const words = trimmed === '' ? 0 : trimmed.split(/\s+/).length;
+            wordCountEl.textContent = 'Words: ' + words;
+            charCountEl.textContent = 'Characters: ' + text.length;
+        }
+
+        function toggleBottomBar() {
+            bottomBarVisible = !bottomBarVisible;
+            bottomBar.classList.toggle('hidden', !bottomBarVisible);
+            appBody.classList.toggle('with-bottombar', bottomBarVisible);
+            bottomBarCheck.style.visibility = bottomBarVisible ? 'visible' : 'hidden';
+
+            if (bottomBarVisible) updateWordCharCount();
+        }
+
+        // ---- Search sidebar: find, highlight, and list all occurrences ----
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function computeMatches(term) {
+            const matches = [];
+            if (!term) return matches;
+            const text = editor.value;
+            const lowerText = text.toLowerCase();
+            const lowerTerm = term.toLowerCase();
+            let idx = 0;
+            while (true) {
+                const found = lowerText.indexOf(lowerTerm, idx);
+                if (found === -1) break;
+                matches.push({ start: found, end: found + term.length });
+                idx = found + term.length;
+            }
+            return matches;
+        }
+
+        // Run when the user edits the search box itself: recomputes matches
+        // and jumps to the first one, like a live "find" bar.
+        function performSearch() {
+            const term = searchInput.value;
+            searchMatches = computeMatches(term);
+            currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
+            renderSearchResults();
+            updateHighlightLayer();
+            if (currentMatchIndex >= 0) {
+                goToMatch(currentMatchIndex, false);
+            }
+        }
+
+        // Run when the document text itself changes while the sidebar is
+        // open: keeps the result list and highlights in sync without
+        // yanking the caret or scroll position around.
+        function refreshSearchMatches() {
+            const term = searchInput.value;
+            if (!term) return;
+            searchMatches = computeMatches(term);
+            if (currentMatchIndex >= searchMatches.length) {
+                currentMatchIndex = searchMatches.length > 0 ? 0 : -1;
+            }
+            renderSearchResults();
+            updateHighlightLayer();
+        }
+
+        function buildSnippet(match) {
+            const text = editor.value;
+            const contextRadius = 45;
+            const start = Math.max(0, match.start - contextRadius);
+            const end = Math.min(text.length, match.end + contextRadius);
+
+            let prefix = text.slice(start, match.start).replace(/\s+/g, ' ').trimStart();
+            const matchText = text.slice(match.start, match.end);
+            let suffix = text.slice(match.end, end).replace(/\s+/g, ' ').trimEnd();
+
+            if (start > 0) prefix = '…' + prefix;
+            if (end < text.length) suffix = suffix + '…';
+
+            return escapeHtml(prefix) + '<mark>' + escapeHtml(matchText) + '</mark>' + escapeHtml(suffix);
+        }
+
+        function renderSearchResults() {
+            searchResultsEl.innerHTML = '';
+            const term = searchInput.value;
+
+            if (!term) {
+                searchCount.textContent = 'No search term';
+                searchPrevBtn.disabled = true;
+                searchNextBtn.disabled = true;
+                return;
+            }
+
+            if (searchMatches.length === 0) {
+                searchCount.textContent = '0 results';
+                searchPrevBtn.disabled = true;
+                searchNextBtn.disabled = true;
+                const empty = document.createElement('div');
+                empty.className = 'search-no-results';
+                empty.textContent = 'No matches found';
+                searchResultsEl.appendChild(empty);
+                return;
+            }
+
+            searchCount.textContent = 'Result ' + (currentMatchIndex + 1) + ' of ' + searchMatches.length;
+            searchPrevBtn.disabled = false;
+            searchNextBtn.disabled = false;
+
+            searchMatches.forEach((match, idx) => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item' + (idx === currentMatchIndex ? ' current' : '');
+                item.innerHTML = buildSnippet(match);
+                item.tabIndex = 0;
+                item.setAttribute('role', 'option');
+                item.addEventListener('click', () => {
+                    goToMatch(idx, true);
+                });
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const next = (idx + 1) % searchMatches.length;
+                        goToMatch(next, false);
+                        const nextItem = searchResultsEl.children[next];
+                        if (nextItem) nextItem.focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prev = (idx - 1 + searchMatches.length) % searchMatches.length;
+                        goToMatch(prev, false);
+                        const prevItem = searchResultsEl.children[prev];
+                        if (prevItem) prevItem.focus();
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        goToMatch(idx, true);
+                    }
+                });
+                searchResultsEl.appendChild(item);
+            });
+        }
+
+        function goToMatch(idx, focusEditorFlag) {
+            if (idx < 0 || idx >= searchMatches.length) return;
+            currentMatchIndex = idx;
+            const match = searchMatches[idx];
+
+            editor.setSelectionRange(match.start, match.end);
+            scrollToOffset(match.start);
+            if (focusEditorFlag) editor.focus();
+
+            updateHighlightLayer();
+
+            searchCount.textContent = 'Result ' + (currentMatchIndex + 1) + ' of ' + searchMatches.length;
+            Array.from(searchResultsEl.children).forEach((child, i) => {
+                child.classList.toggle('current', i === currentMatchIndex);
+            });
+            const currentItem = searchResultsEl.children[currentMatchIndex];
+            if (currentItem) currentItem.scrollIntoView({ block: 'nearest' });
+        }
+
+        function clearHighlightLayer() {
+            highlightInner.innerHTML = '';
+            highlightInner.style.height = '0px';
+        }
+
+        // Measures the real on-screen rect(s) of every match using the
+        // same monospace layout engine as scrollToOffset (see above),
+        // rather than a second div-based mirror. A match can span more
+        // than one visual line (e.g. right at a wrap point), so this
+        // walks line by line and emits one rect per line it touches.
+        function measureMatchRects() {
+            const { colsPerLine, lineHeightPx, charWidthPx } = getLayoutMetrics();
+            const lines = computeVisualLines(editor.value, colsPerLine);
+
+            const results = searchMatches.map((match, idx) => {
+                const rects = [];
+                let pos = match.start;
+                let li = findLineIndex(pos, lines);
+                while (pos < match.end && li < lines.length) {
+                    const line = lines[li];
+                    const segEnd = Math.min(match.end, line.end);
+                    if (segEnd > pos) {
+                        rects.push({
+                            top: li * lineHeightPx,
+                            left: (pos - line.start) * charWidthPx,
+                            width: (segEnd - pos) * charWidthPx,
+                            height: lineHeightPx
+                        });
+                    }
+                    pos = segEnd;
+                    if (pos >= line.end) {
+                        li += 1;
+                        if (li < lines.length) pos = Math.max(pos, lines[li].start);
+                    }
+                }
+                return { matchIndex: idx, rects };
+            });
+
+            return { results, totalHeight: lines.length * lineHeightPx };
+        }
+
+        function updateHighlightLayer() {
+            if (!searchSidebarVisible || searchMatches.length === 0) {
+                clearHighlightLayer();
+                return;
+            }
+
+            const { results, totalHeight } = measureMatchRects();
+            highlightInner.innerHTML = '';
+            highlightInner.style.height = totalHeight + 'px';
+
+            results.forEach(({ matchIndex, rects }) => {
+                rects.forEach(rect => {
+                    const box = document.createElement('div');
+                    box.className = 'hl-box' + (matchIndex === currentMatchIndex ? ' current' : '');
+                    box.style.top = rect.top + 'px';
+                    box.style.left = rect.left + 'px';
+                    box.style.width = rect.width + 'px';
+                    box.style.height = rect.height + 'px';
+                    highlightInner.appendChild(box);
+                });
+            });
+
+            syncHighlightScroll();
+        }
+
+        function syncHighlightScroll() {
+            highlightLayer.scrollTop = editor.scrollTop;
+            highlightLayer.scrollLeft = editor.scrollLeft;
+        }
+
+        // The textarea's clientWidth/clientHeight already exclude its own
+        // scrollbar when one is visible, so the highlight viewport must
+        // track that same box. Box *positions* also depend on width (a
+        // narrower box means different wrapping), so any resize needs a
+        // full remeasure, not just a viewport resize. Anything that can
+        // change the textarea's rendered size (sidebar toggles, large-font
+        // toggle, window resize, manual vertical resize-drag, a scrollbar
+        // appearing as text is typed) is covered by observing the element
+        // directly rather than trying to enumerate every trigger.
+        function syncHighlightLayerSize() {
+            highlightLayer.style.width = editor.clientWidth + 'px';
+            highlightLayer.style.height = editor.clientHeight + 'px';
+        }
+
+        const highlightResizeObserver = new ResizeObserver(() => {
+            invalidateLayoutCache();
+            syncHighlightLayerSize();
+            updateHighlightLayer();
+        });
+        highlightResizeObserver.observe(editor);
+
+        searchInput.addEventListener('input', performSearch);
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (searchMatches.length === 0) return;
+                if (e.shiftKey) {
+                    goToMatch((currentMatchIndex - 1 + searchMatches.length) % searchMatches.length, true);
+                } else {
+                    goToMatch((currentMatchIndex + 1) % searchMatches.length, true);
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (searchMatches.length === 0) return;
+                goToMatch((currentMatchIndex + 1) % searchMatches.length, false);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (searchMatches.length === 0) return;
+                goToMatch((currentMatchIndex - 1 + searchMatches.length) % searchMatches.length, false);
+            } else if (e.key === 'Escape') {
+                toggleSearchSidebar();
+            }
+        });
+
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            performSearch();
+            searchInput.focus();
+        });
+
+        searchNextBtn.addEventListener('click', () => {
+            if (searchMatches.length === 0) return;
+            goToMatch((currentMatchIndex + 1) % searchMatches.length, true);
+        });
+
+        searchPrevBtn.addEventListener('click', () => {
+            if (searchMatches.length === 0) return;
+            goToMatch((currentMatchIndex - 1 + searchMatches.length) % searchMatches.length, true);
+        });
+
         function toggleMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            const wasOpen = menu.classList.contains('show');
             closeMenus();
-            document.getElementById(menuId).classList.toggle('show');
+            if (!wasOpen) menu.classList.add('show');
         }
 
         function closeMenus() {
@@ -656,8 +1603,34 @@
             }
         });
 
-        setTextContent('');
+        // Makes the menu bar operable from the keyboard: menu-title and
+        // menu-item are plain divs (for styling reasons), so they need an
+        // explicit Enter/Space handler to behave like the buttons they
+        // represent. classList.contains('disabled') mirrors the pointer-
+        // events:none guard the mouse path already gets from CSS.
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const target = e.target.closest('.menu-title, .menu-item');
+            if (!target || target.classList.contains('disabled')) return;
+            e.preventDefault();
+            target.click();
+        });
+
+        // Warn before the tab is closed, reloaded, or navigated away from
+        // while there are unsaved changes. Browsers ignore any custom
+        // message text and show their own generic confirmation dialog;
+        // setting returnValue (and, for older engines, returning the
+        // string) is what triggers that dialog to appear at all.
+        window.addEventListener('beforeunload', (e) => {
+            if (!isDirty) return;
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        });
+
+        editor.value = '';
         updateHistoryButtons();
     </script>
-</body>
-</html>
+
+
+</body></html>
