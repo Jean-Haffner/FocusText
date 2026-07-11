@@ -107,6 +107,7 @@
         /* ---- Sidebar (chapters panel) ---- */
         
         .sidebar {
+            position: relative;
             width: 240px;
             flex-shrink: 0;
             overflow-y: auto;
@@ -115,11 +116,30 @@
             box-sizing: border-box;
         }
         
+        .sidebar.resizing {
+            transition: none;
+        }
+        
         .sidebar.hidden {
             width: 0;
             padding: 0 !important;
             opacity: 0;
             overflow: hidden;
+        }
+        
+        .sidebar-resizer {
+            position: absolute;
+            top: 0;
+            right: -3px;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 10;
+        }
+        
+        .sidebar-resizer:hover,
+        .sidebar.resizing .sidebar-resizer {
+            background-color: rgba(74, 158, 255, 0.5);
         }
         
         .dark .sidebar {
@@ -232,18 +252,25 @@
             min-width: 0;
             padding: 65px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         
         .editor-container {
             max-width: 800px;
+            width: 100%;
             margin: 0 auto;
             padding: 10px;
             border-radius: 4px;
             transition: background-color 0.3s;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
         
         .dark .editor-container {
-            background-color: #555555;
+            background-color: rgba(85, 85, 85, 0.7);
         }
         
         .light .editor-container {
@@ -253,6 +280,7 @@
         .editor-content {
             display: block;
             width: 100%;
+            flex: 1;
             min-height: 500px;
             font-family: 'Consolas', 'Courier New', monospace;
             font-size: 11px;
@@ -260,7 +288,7 @@
             outline: none;
             border: none;
             background: transparent;
-            resize: vertical;
+            resize: none;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
@@ -281,6 +309,10 @@
         
         .editor-stack {
             position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
         
         /* The highlight layer never renders a parallel copy of the text
@@ -562,6 +594,7 @@
         <div class="sidebar hidden" id="sidebar">
             <div class="chapters-header">Chapters (drag to reorder)</div>
             <div class="chapter-list" id="chapterList"></div>
+            <div class="sidebar-resizer" id="sidebarResizer" title="Drag to resize"></div>
         </div>
         
         <div class="main-content">
@@ -607,6 +640,7 @@
         const fileInput = document.getElementById('fileInput');
         const sidebar = document.getElementById('sidebar');
         const sidebarCheck = document.getElementById('sidebarCheck');
+        const sidebarResizer = document.getElementById('sidebarResizer');
         const undoItem = document.getElementById('undoItem');
         const redoItem = document.getElementById('redoItem');
         const largeFontCheck = document.getElementById('largeFontCheck');
@@ -640,6 +674,9 @@
         let renderScheduled = false;
         let isDirty = false;
         let sidebarVisible = false;
+        let sidebarWidth = 240;
+        const SIDEBAR_MIN_WIDTH = 160;
+        const SIDEBAR_MAX_WIDTH = 560;
         let largeFontEnabled = false;
         let searchSidebarVisible = false;
         let bottomBarVisible = false;
@@ -1269,7 +1306,46 @@
         function toggleSidebar() {
             sidebarVisible = !sidebarVisible;
             sidebar.classList.toggle('hidden', !sidebarVisible);
+            sidebar.style.width = (sidebarVisible ? sidebarWidth : 0) + 'px';
             sidebarCheck.style.visibility = sidebarVisible ? 'visible' : 'hidden';
+        }
+
+        // ---- Horizontal resize of the chapters sidebar ------------------
+        // Dragging the handle sets an explicit pixel width, which then
+        // becomes the width toggleSidebar restores the panel to on reopen.
+        // Transitions are switched off for the duration of the drag so the
+        // panel tracks the pointer immediately instead of easing toward it.
+
+        let sidebarResizeStartX = 0;
+        let sidebarResizeStartWidth = 0;
+
+        sidebarResizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            sidebarResizeStartX = e.clientX;
+            sidebarResizeStartWidth = sidebar.getBoundingClientRect().width;
+            sidebar.classList.add('resizing');
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            document.addEventListener('mousemove', onSidebarResizeMove);
+            document.addEventListener('mouseup', onSidebarResizeEnd);
+        });
+
+        function onSidebarResizeMove(e) {
+            const delta = e.clientX - sidebarResizeStartX;
+            const newWidth = Math.min(
+                SIDEBAR_MAX_WIDTH,
+                Math.max(SIDEBAR_MIN_WIDTH, sidebarResizeStartWidth + delta)
+            );
+            sidebarWidth = newWidth;
+            sidebar.style.width = newWidth + 'px';
+        }
+
+        function onSidebarResizeEnd() {
+            sidebar.classList.remove('resizing');
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            document.removeEventListener('mousemove', onSidebarResizeMove);
+            document.removeEventListener('mouseup', onSidebarResizeEnd);
         }
 
         function toggleLargeFont() {
@@ -1537,12 +1613,39 @@
             highlightLayer.style.height = editor.clientHeight + 'px';
         }
 
+        // The remeasure work below (getLayoutMetrics in particular) creates
+        // and measures a throwaway clone element synchronously, which is
+        // expensive. Running that directly inside the ResizeObserver
+        // callback can itself trigger further layout changes within the
+        // same delivery cycle, which is exactly what causes the browser's
+        // benign-but-noisy "ResizeObserver loop completed with undelivered
+        // notifications" message (most likely during a drag-resize, where
+        // notifications arrive in a rapid burst). Deferring to the next
+        // animation frame -- and coalescing bursts into a single pending
+        // frame -- moves the heavy work outside that cycle entirely.
+        let highlightResizeFrame = null;
+
         const highlightResizeObserver = new ResizeObserver(() => {
-            invalidateLayoutCache();
-            syncHighlightLayerSize();
-            updateHighlightLayer();
+            if (highlightResizeFrame !== null) return;
+            highlightResizeFrame = requestAnimationFrame(() => {
+                highlightResizeFrame = null;
+                invalidateLayoutCache();
+                syncHighlightLayerSize();
+                updateHighlightLayer();
+            });
         });
         highlightResizeObserver.observe(editor);
+
+        // Belt-and-suspenders: this specific message is a well-known,
+        // non-fatal browser notice (nothing actually broke, no work was
+        // lost) rather than a real script error, so it's safe to swallow
+        // it here instead of letting it surface as an "Uncaught Error".
+        window.addEventListener('error', (e) => {
+            if (e.message && e.message.includes('ResizeObserver loop')) {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }
+        });
 
         searchInput.addEventListener('input', performSearch);
 
@@ -1630,6 +1733,7 @@
 
         editor.value = '';
         updateHistoryButtons();
+        sidebar.style.width = (sidebarVisible ? sidebarWidth : 0) + 'px';
     </script>
 
 
