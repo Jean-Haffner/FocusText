@@ -1,1 +1,3 @@
-The perfect text editor for stitching ideas: Any section that is preceded by two empty paragraphs starts a new chapter. Using the Chapters Tool (View > Chapters Tool), chapters can be rearranged in seconds, making it easy to reorganise your document and quickly navigate through your text.
+### The perfect text editor for stitching ideas
+
+Any section that is preceded by two empty paragraphs starts a new chapter. Using the Chapters Tool (View > Chapters Tool), chapters can be rearranged in seconds, making it easy to reorganise your document and quickly navigate through your text.
