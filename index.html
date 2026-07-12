@@ -1245,6 +1245,12 @@
                 } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
                     e.preventDefault();
                     redo();
+                } else if (e.key === 's' || e.key === 'S') {
+                    e.preventDefault();
+                    saveFile();
+                } else if (e.key === 'f' || e.key === 'F') {
+                    e.preventDefault();
+                    openSearchSidebar();
                 }
             }
         });
@@ -1369,6 +1375,20 @@
                 performSearch();
             } else {
                 clearHighlightLayer();
+            }
+        }
+
+        // Ctrl/Cmd+F: open the search sidebar like toggleSearchSidebar does,
+        // but if it's already open, re-focus and select the search input
+        // instead of closing it -- that's what every other app does with
+        // this shortcut, and it lets a fresh search overwrite the old one
+        // without an extra click.
+        function openSearchSidebar() {
+            if (!searchSidebarVisible) {
+                toggleSearchSidebar();
+            } else {
+                searchInput.focus();
+                searchInput.select();
             }
         }
 
